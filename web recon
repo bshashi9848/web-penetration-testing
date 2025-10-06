@@ -1,0 +1,85 @@
+Phase 1: Setup and Preparation (Initial Tool Installation and Configuration)
+1.	Update Operating System Repositories:
+Before installing new tools, update repositories:
+ 	sudo apt update -y
+2.	Install Necessary Tools and Libraries:
+Install key reconnaissance tools: SubFinder, Amass, SecList, GoLang, FFuf, GoBuster, HTTPX, Nmap, Naabu, Dirsearch, GAU, WaybackURLs, and Katana.
+3.	Configure API Keys:
+Configure SubFinder and Amass with API keys (e.g., from SecurityTrails, Censys) to improve passive enumeration.
+o	SubFinder config file: ~/.config/subfinder/config.yaml
+o	Amass data sources file: ~/.config/amass/config.ini
+________________________________________
+Phase 2: Subdomain Enumeration (Passive and Active)
+Passive Enumeration
+1.	SubFinder:
+ 	subfinder -d example.com -o subfinder.txt
+1.1 edit it using:  mousepad /home/kali/.config/subfinder/config.yaml
+1.2 sign in/ sign up with securitytrails and get api keys. add them in that file and save it.
+1.3 now run : subfinder -d example.com -sources securitytrails -o subfinder2.txt
+1.	Amass:
+ 	amass enum -d example.com -o amass.txt
+ 	similarly modify the config file of amass yaml.
+2.	Filter & Combine Results:
+ 	cat subfinder.txt amass.txt | sort -u > combined_subdomains.txt
+Active Subdomain Brute Forcing
+1.	Select Wordlist:
+Use /usr/share/seclists/Discovery/DNS/.
+2.	FFuf for Brute Forcing:
+ 	ffuf -u http://FUZZ.example.com -w words.txt -o ffuf.txt
+3.	GoBuster DNS Mode:
+ 	gobuster dns -d example.com -w words.txt -o gobuster.txt
+4.	Amass with Brute:
+ 	amass enum -d example.com -brute -o amass_brute.txt
+ 	get resolver.txt from: https://github.com/trickest/resolvers/blob/main/resolvers.txt 
+5.	PureDNS:
+ 	puredns bruteforce wordlist.txt example.com --resolvers resolvers.txt 
+________________________________________
+Phase 3: Filtering and Finding the Origin IP Address
+1.	Filter Live Subdomains with HTTPX:
+ 	cat combined_subdomains.txt | httpx -o live_subdomains.txt -title
+2.	Find Origin IPs (Bypass WAFs):
+o	git clone https://github.com/christophetd/CloudFlair
+o	pip3 install -r requirements.txt
+o	sudo apt install python3 python3-pip
+o	login to censys. go to myaccount to get the apiid and secret keys.
+o	export CENSYSAPI_ID= –KEY– & export CENSYS_API_SCERT= –KEY–
+o	python3 cloudflair.py example.com
+o	search in securitytails site with domain to get origin IP.
+________________________________________
+Phase 4: Port Scanning and Vulnerability Assessment
+1.	Scan Origin IP (Not WAF IP):
+ 	nmap -sV -sC -vv -p- [Origin IP]
+2.	Naabu Fast Scan:
+ 	naabu -list live_subdomains.txt -top-ports 1000 -o naabu.txt
+3.	Nmap Vulnerability Scripts:
+ 	nmap --script vuln -p80,443 [Origin IP]
+________________________________________
+Phase 5: Content Discovery and Enumeration
+Active Content Discovery
+1.	Dirsearch Basic:
+ 	dirsearch -u https://example.com -o dirsearch.txt
+2.	Dirsearch with Filters:
+ 	dirsearch -u https://example.com --exclude-status=403,301
+3.	Custom Wordlist:
+ 	dirsearch -u https://example.com -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt
+4.	Recursive Scans:
+ 	dirsearch -u https://example.com -r
+5.	FFuf Pattern Filtering:
+ 	ffuf -u https://example.com/FUZZ -w words.txt -fs 4242 -mc 200
+Passive Content Enumeration
+1.	GAU (Get All URLs):
+ 	echo example.com | gau -o gau.txt
+2.	WaybackURLs:
+ 	echo example.com | waybackurls -o wayback.txt
+ 	echo “example.com” | gau > gau.txt && echo “example.com” | waybackurls > way.txt && cat gau.txt way.txt | sort -u > sorted.txt
+3.	Katana Crawling:
+ 	katana -u https://example.com -jc -depth 4 -o katana.txt
+________________________________________
+Phase 6: Choosing the Right Wordlist
+1.	Start Broad: Use common.txt from SecLists.
+2.	Specialize: Move to tech-specific lists (e.g., raft-medium-directories.txt).
+3.	Customize: Add new patterns from crawling & fuzzing results.
+________________________________________
+References
+•	Tool docs: SubFinder, Amass, FFuf, GoBuster, Nmap, HTTPX, Naabu, Dirsearch, GAU, Katana.
+•	Wordlists:SecLists GitHub.
