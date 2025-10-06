@@ -75,11 +75,31 @@ Passive Content Enumeration
 3.	Katana Crawling:
  	katana -u https://example.com -jc -depth 4 -o katana.txt
 ________________________________________
-Phase 6: Choosing the Right Wordlist
-1.	Start Broad: Use common.txt from SecLists.
-2.	Specialize: Move to tech-specific lists (e.g., raft-medium-directories.txt).
-3.	Customize: Add new patterns from crawling & fuzzing results.
+Phase 6 — JavaScript & Endpoint Analysis
+Goal: extract API endpoints, hidden parameters and potential secrets from JS files.
+Tools & example commands
+•	Gospider (crawl + JS extraction):
+gospider -s https://example.com -d 2 --js -o gospider_output.txt
+•	Hakrawler (quick JS discovery):
+hakrawler -url https://example.com -depth 2 -plain > hakrawler_urls.txt
+•	GetJS / Wayback / GAU combo:
+echo example.com | gau | grep ".js" > gau_js.txt
+•	JSFinder / LinkFinder (extract endpoints):
+python3 LinkFinder.py -i https://example.com -o cli
+•	SecretFinder (find potential secrets in JS):
+python3 SecretFinder.py -i gospider_output.txt -o secrets.txt
+Deliverables: js_endpoints.txt, potential_secrets.md
 ________________________________________
-References
-•	Tool docs: SubFinder, Amass, FFuf, GoBuster, Nmap, HTTPX, Naabu, Dirsearch, GAU, Katana.
-•	Wordlists:SecLists GitHub.
+Phase 7 — API & Modern Services Testing
+Goal: map and test REST/GraphQL/SOAP endpoints for logic/auth issues.
+Tools & example commands
+•	HTTPX (probe & fingerprint):
+httpx -l live_http.txt -status-code -content-length -titles -o httpx_out.txt
+•	Postman (GUI) / curl (CLI):
+curl -i -X GET "https://api.example.com/v1/users" -H "Authorization: Bearer <token>"
+•	GraphQL introspection (graphql-cli or curl):
+curl -X POST -H "Content-Type: application/json" --data '{"query":"{__schema{types{name}}}"}' https://example.com/graphql
+•	Arjun (parameter discovery):
+arjun -u https://example.com -o arjun_results.txt
+Deliverables: api_endpoints.csv, api_vulns.md
+
